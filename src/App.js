@@ -3,7 +3,8 @@ import {
   login as apiLogin, logout as apiLogout,
   getComplaints, createComplaint, updateComplaint,
   getRooms, getMyRoom, allocateRoom, vacateRoom,
-  getUsers, getNotices, createNotice, changePassword
+  getUsers, getNotices, createNotice, changePassword,
+  updateUserStatus
 } from "./api";
 
 const css = `
@@ -284,12 +285,19 @@ function AllocModal({ modal, avail, onClose, onDone }) {
     if (!room) return setMsg("Please select a room.");
     setLoading(true); setMsg("");
     try {
-      await updateComplaint(modal.complaintId, {
-        status: "resolved",
-        room_id: room,
-        student_db_id: modal.studentDbId
-      });
-      setMsg("✓ Room allocated and ticket closed!");
+      if (modal.complaintId) {
+        // Allocation triggered from a complaint/room-request ticket
+        await updateComplaint(modal.complaintId, {
+          status: "resolved",
+          room_id: room,
+          student_db_id: modal.studentDbId
+        });
+        setMsg("✓ Room allocated and ticket closed!");
+      } else {
+        // Direct allocation from Students tab (no complaint)
+        await allocateRoom(room, { student_id: modal.studentDbId });
+        setMsg("✓ Room allocated successfully!");
+      }
       setTimeout(() => { onClose(); onDone(); }, 1400);
     } catch (e) { setMsg(e.message); }
     setLoading(false);
@@ -311,7 +319,7 @@ function AllocModal({ modal, avail, onClose, onDone }) {
           {msg && <div className={msg.startsWith("✓") ? "msg-ok" : "msg-err"}>{msg}</div>}
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-white btn-lg" onClick={handle} disabled={loading}>
-              {loading ? "Allocating..." : "Allocate & Close Ticket →"}
+              {loading ? "Allocating..." : modal.complaintId ? "Allocate & Close Ticket →" : "Allocate Room →"}
             </button>
             <button className="btn btn-ghost btn-lg" onClick={onClose}>Cancel</button>
           </div>
@@ -472,8 +480,9 @@ function StudentDB({ user, onLogout }) {
     try {
       const r = await createComplaint({ category: "Room Request", description: "ROOM REQUEST — Please allocate a room to me.", priority: "High" });
       setRoomMsg("✓ Room request sent! Ticket: " + r.ticket_id + ". Your warden will assign a room soon.");
+      load();
     } catch (e) {
-      setRoomMsg("✓ Room request sent! Your warden will assign a room soon.");
+      setRoomMsg("✗ Failed to send request: " + e.message);
     }
     setRequesting(false);
   };
@@ -755,8 +764,10 @@ function WardenDB({ user, onLogout }) {
   const [vacateModal, setVacateModal] = useState(null);
   const [blkFilter, setBlkFilter] = useState("all");
   const [compFilter, setCompFilter] = useState("all");
-  const [stuSearch, setStuSearch] = useState("");
-  const [roomSearch, setRoomSearch] = useState("");
+
+   const [roomSearch, setRoomSearch] = useState("");
+// eslint-disable-line no-unused-vars  
+   const [stuSearch, setStuSearch] = useState(""); 
   const [noticeForm, setNoticeForm] = useState({ title: "", type: "general", message: "" });
   const [nMsg, setNMsg] = useState("");
   const [posting, setPosting] = useState(false);
@@ -1047,7 +1058,7 @@ function WardenDB({ user, onLogout }) {
             {loading ? <Spin /> : (
               <div className="tbl-wrap">
                 <table>
-                  <thead><tr><th>Student ID</th><th>Name</th><th>Email</th><th>Room</th><th>Block</th><th>Floor</th><th>Status</th></tr></thead>
+                  <thead><tr><th>Student ID</th><th>Name</th><th>Email</th><th>Room</th><th>Block</th><th>Floor</th><th>Status</th><th>Action</th></tr></thead>
                   <tbody>
                     {filtStudents.map(s => {
                       const sr = rooms.find(r => r.student_uid?.includes(s.user_id));
@@ -1060,6 +1071,13 @@ function WardenDB({ user, onLogout }) {
                           <td style={{ color: "var(--txt3)" }}>{sr ? "Block "+sr.block : "—"}</td>
                           <td style={{ color: "var(--txt3)" }}>{sr ? "Floor "+sr.floor : "—"}</td>
                           <td><Bdg s={s.status} /></td>
+                          <td>
+                            {!sr && (
+                              <button className="btn btn-purple btn-sm" onClick={() => setAllocModal({ complaintId: null, studentDbId: s.id, studentName: s.name, studentUid: s.user_id })}>
+                                Allocate Room
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -1338,7 +1356,7 @@ function AdminDB({ user, onLogout }) {
             {loading ? <Spin /> : (
               <div className="tbl-wrap">
                 <table>
-                  <thead><tr><th>User ID</th><th>Name</th><th>Role</th><th>Email</th><th>Room</th><th>Status</th></tr></thead>
+<thead><tr><th>User ID</th><th>Name</th><th>Role</th><th>Email</th><th>Room</th><th>Status</th><th>Action</th></tr></thead>
                   <tbody>
                     {filtUsers.map(u => {
                       const ur = rooms.find(r => r.student_uid?.includes(u.user_id));
@@ -1350,6 +1368,17 @@ function AdminDB({ user, onLogout }) {
                           <td style={{ color: "var(--txt3)" }}>{u.email}</td>
                           <td className="mono" style={{ color: ur ? "var(--txt)" : "var(--txt3)", fontSize: 11 }}>{ur?.room_number || (u.role==="student"?"Not allocated":"—")}</td>
                           <td><Bdg s={u.status} /></td>
+                          <td>
+                            {u.id !== user.id && (
+                              u.status === 'active'
+                                ? <button className="btn btn-red btn-sm" onClick={async () => {
+                                    await updateUserStatus(u.id, 'inactive'); load();
+                                  }}>Deactivate</button>
+                                : <button className="btn btn-green btn-sm" onClick={async () => {
+                                    await updateUserStatus(u.id, 'active'); load();
+                                  }}>Activate</button>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}

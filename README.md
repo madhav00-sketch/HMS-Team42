@@ -1,70 +1,171 @@
-# Getting Started with Create React App
+# Hostel Management System (HMS)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Team 42** | NJ Madhav, P Krishna Sai , Tathya Sharma.
+**Instructors:** Sai Srithaja & Arun Avinash Chauhan  
+**Version:** 1.0 | April 2026
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## About the Project
 
-### `npm start`
+A full-stack web application to manage hostel operations including room allocation, complaint and ticket management, notice board, and user administration.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Three roles are supported — **Student**, **Warden**, and **Admin** — each with their own dashboard and access level enforced via JWT middleware on every protected route.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Tech Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| Layer    | Technology                  |
+|----------|-----------------------------|
+| Frontend | React 18 (Create React App) |
+| Backend  | Node.js + Express           |
+| Database | MySQL 8                     |
+| Auth     | JWT + bcrypt                |
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Project Structure
+hostel-app/
+├── src/                        ← React frontend source
+│   └── api.js                  ← Axios API helper
+├── public/                     ← React public assets
+├── hms-backend/                ← Node.js + Express backend
+│   ├── server.js               ← Entry point
+│   ├── src/
+│   │   ├── config/db.js        ← MySQL connection pool
+│   │   ├── controllers/        ← Business logic
+│   │   ├── middleware/auth.js  ← JWT verification
+│   │   └── routes/             ← API route definitions
+│   └── .env                    ← Environment config (create manually)
+├── hms_backup.sql              ← Full MySQL database dump
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+├── SRS_TEAM42.docx
+├── SDS_team42.pdf
+└── HMS_Test_Plan_TEAM42.xlsx
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Deployment
 
-### `npm run eject`
+Not hosted on a live URL. Please run locally using the steps below.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## How to Run Locally
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Prerequisites
+- Node.js v18+
+- MySQL 8
+- Git
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Step 1 — Clone the repository
 
-## Learn More
+```bash
+git clone https://github.com/madhav00-sketch/HMS-Team42.git
+cd HMS-Team42
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Step 2 — Set up the database
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Open MySQL CLI or MySQL Workbench and run:
 
-### Code Splitting
+```sql
+CREATE DATABASE hms_db;
+USE hms_db;
+SOURCE hms_backup.sql;
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Or from Command Prompt:
 
-### Analyzing the Bundle Size
+```bash
+mysql -u root -p hms_db < hms_backup.sql
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+This loads all tables and sample data — 225 rooms, 350+ students, wardens and admins.
 
-### Making a Progressive Web App
+### Step 3 — Configure and run the backend
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```bash
+cd hms-backend
+```
 
-### Advanced Configuration
+Create a `.env` file inside `hms-backend/` with:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+PORT=5000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=hms_db
+JWT_SECRET=hms_team42_secret_2024
 
-### Deployment
+Then:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```bash
+npm install
+node server.js
+```
 
-### `npm run build` fails to minify
+Backend runs at: `http://localhost:5000`  
+Health check: `http://localhost:5000/api/health`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Step 4 — Run the frontend
+
+Open a new terminal in the root project folder:
+
+```bash
+npm install
+npm start
+```
+
+Frontend runs at: `http://localhost:3000`
+
+---
+
+## Test Login Credentials
+
+All accounts use the same default password.
+
+| Role    | User ID      | Password |
+|---------|-----------------|----------|
+| Admin   | AD001  | password123 |
+| Warden  | WD001 | password123 |
+| Student | HS2024001  | password123 |
+
+More accounts are available after importing `hms_backup.sql`.
+
+---
+
+## API Endpoints
+
+| Method | Endpoint            | Description             | Access  |
+|--------|---------------------|-------------------------|---------|
+| POST   | /api/auth/login     | Login, returns JWT      | Public  |
+| GET    | /api/rooms          | Get all rooms           | Warden  |
+| POST   | /api/rooms          | Add a room              | Warden  |
+| GET    | /api/complaints     | Get complaints          | Both    |
+| POST   | /api/complaints     | Submit a complaint      | Student |
+| PATCH  | /api/complaints/:id | Update complaint status | Warden  |
+| GET    | /api/notices        | Get all notices         | Both    |
+| POST   | /api/notices        | Post a notice           | Warden  |
+| GET    | /api/users          | Get all users           | Admin   |
+| POST   | /api/users          | Add a user              | Admin   |
+| PATCH  | /api/users/:id      | Edit/deactivate user    | Admin   |
+
+---
+
+## Notes for Evaluators
+
+- The `.env` file is not pushed to GitHub for security. Create it manually using the format above.
+- `hms_backup.sql` contains the full database schema and sample data.
+- Role-based access is enforced on both frontend (UI hiding) and backend (JWT middleware).
+- Known issues documented in the Test Plan: token not invalidated on logout, complaint list lacks pagination, XSS sanitisation pending.
+
+---
+
+## Documents
+
+All project documents ( download to open SRS and Testplan) :
+
+- `SRS_TEAM42.docx` — Software Requirements Specification
+- `SDS_team42.pdf` — Software Design Specification
+- `HMS_Test_Plan_TEAM42.xlsx` — Test Plan (56 test cases across 8 modules)
